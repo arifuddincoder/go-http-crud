@@ -37,6 +37,7 @@ func main() {
 	mux.HandleFunc("POST /create-user", createUser)
 	mux.HandleFunc("GET /users", usersHandler)
 	mux.HandleFunc("GET /users/{id}", getSingleUserHandler)
+	mux.HandleFunc("PUT /users/{id}", updateUserHandler)
 
 	fmt.Println("Server is running on 5000")
 
@@ -104,6 +105,41 @@ func getSingleUserHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 
 			json.NewEncoder(w).Encode(user)
+			return
+		}
+
+	}
+
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintln(w, "User not found")
+}
+
+func updateUserHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := r.PathValue("id")
+
+	id, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Invalid user id")
+		return
+	}
+
+	var updateUser User
+
+	err = json.NewDecoder(r.Body).Decode(&updateUser)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Invalid request body")
+		return
+	}
+
+	for idx, user := range users {
+		if user.Id == id {
+			updateUser.Id = id
+			users[idx] = updateUser
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(updateUser)
 			return
 		}
 
