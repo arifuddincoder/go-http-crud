@@ -27,6 +27,12 @@ var users = []User{
 		Age:   11,
 		Email: "jamrul@example.com",
 	},
+	{
+		Id:    3,
+		Name:  "Kamal Hasan",
+		Age:   14,
+		Email: "kamal@example.com",
+	},
 }
 
 func main() {
@@ -38,6 +44,7 @@ func main() {
 	mux.HandleFunc("GET /users", usersHandler)
 	mux.HandleFunc("GET /users/{id}", getSingleUserHandler)
 	mux.HandleFunc("PUT /users/{id}", updateUserHandler)
+	mux.HandleFunc("DELETE /users/{id}", deleteUserHandler)
 
 	fmt.Println("Server is running on 5000")
 
@@ -143,6 +150,31 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+	}
+
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintln(w, "User not found")
+}
+
+func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := r.PathValue("id")
+
+	id, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Invalid user id")
+		return
+	}
+
+	for idx, user := range users {
+		if user.Id == id {
+			users = append(users[:idx], users[idx+1:]...)
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(users)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNotFound)
