@@ -1,16 +1,40 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
 
+type User struct {
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+	Age   int    `json:"age"`
+	Email string `json:"email"`
+}
+
+var users = []User{
+	{
+		Id:    1,
+		Name:  "Kamrul Hasan",
+		Age:   10,
+		Email: "kamrul@example.com",
+	},
+	{
+		Id:    2,
+		Name:  "Jamrul Hasan",
+		Age:   11,
+		Email: "jamrul@example.com",
+	},
+}
+
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", rootHandler)
-	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("GET /", rootHandler)
+	mux.HandleFunc("GET /health", healthHandler)
 	mux.HandleFunc("POST /create-user", createUser)
+	mux.HandleFunc("GET /users", usersHandler)
 
 	fmt.Println("Server is running on 5000")
 
@@ -35,5 +59,28 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	// 	fmt.Fprintln(w, "Request isn't from post request")
 	// 	return
 	// }
-	fmt.Fprintln(w, "Request from post request!")
+	// fmt.Fprintln(w, "Request from post request!")
+
+	var newUser User
+
+	err := json.NewDecoder(r.Body).Decode(&newUser)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Invalid request")
+		return
+	}
+	// fmt.Println(newUser)
+	newUser.Id = len(users) + 1
+	users = append(users, newUser)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(users)
+}
+
+func usersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// users, _ := json.Marshal(Users)
+	// w.Write(users)
+
+	json.NewEncoder(w).Encode(users)
 }
